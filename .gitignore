@@ -1,0 +1,16 @@
+# 데이터베이스 (용량 크고 개인 수집 데이터)
+lotto.db
+
+# 빌드 결과물
+build/
+dist/
+*.spec
+__pycache__/
+*.pyc
+
+# 환경설정
+.env
+*.log
+
+# Mac 시스템 파일
+.DS_Store
