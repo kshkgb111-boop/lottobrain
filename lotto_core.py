@@ -17,10 +17,34 @@ try:
 except ImportError:
     requests = None
 
-# launcher.py가 LOTTOBRAIN_DATA_DIR 환경변수를 설정하면 그 경로 사용
-# 없으면 현재 디렉토리 (개발/CLI 모드)
-_data_dir = os.environ.get("LOTTOBRAIN_DATA_DIR", "")
-DB_PATH = os.path.join(_data_dir, "lotto.db") if _data_dir else "lotto.db"
+# DB 경로 결정:
+# 1) LOTTOBRAIN_DATA_DIR 환경변수 (launcher.py 배포용)
+# 2) Streamlit Cloud: 소스 폴더가 읽기 전용이므로 /tmp/ 에 복사해서 사용
+# 3) 로컬 개발: 현재 디렉토리
+def _resolve_db_path() -> str:
+    import shutil
+    env_dir = os.environ.get("LOTTOBRAIN_DATA_DIR", "")
+    if env_dir:
+        return os.path.join(env_dir, "lotto.db")
+
+    # 현재 디렉토리 쓰기 가능 여부 확인
+    local_db = "lotto.db"
+    try:
+        with open(local_db, "ab"):
+            pass
+        return local_db  # 로컬 개발 환경
+    except (IOError, OSError):
+        pass
+
+    # Streamlit Cloud 등 읽기 전용 환경 → /tmp/ 사용
+    tmp_db = "/tmp/lotto.db"
+    if not os.path.exists(tmp_db):
+        src = os.path.join(os.path.dirname(os.path.abspath(__file__)), "lotto.db")
+        if os.path.exists(src):
+            shutil.copy2(src, tmp_db)
+    return tmp_db
+
+DB_PATH = _resolve_db_path()
 
 # ─────────────────────────────────────────
 # DB
