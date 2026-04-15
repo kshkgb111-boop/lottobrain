@@ -486,6 +486,36 @@ div[data-testid="stSlider"] [role="slider"] {
 core.init_db()
 
 # ─────────────────────────────────────────
+# 방문자 카운터
+# ─────────────────────────────────────────
+import json as _json
+
+_VISIT_FILE = "/tmp/lotto_visits.json"
+_VISIT_BASE = 1000  # 카운터 미설치 이전 방문자 기준값
+
+def _get_visit_count() -> int:
+    try:
+        with open(_VISIT_FILE) as f:
+            return _json.load(f).get("count", _VISIT_BASE)
+    except Exception:
+        return _VISIT_BASE
+
+def _increment_visit() -> int:
+    count = _get_visit_count() + 1
+    try:
+        with open(_VISIT_FILE, "w") as f:
+            _json.dump({"count": count}, f)
+    except Exception:
+        pass
+    return count
+
+if "visited" not in st.session_state:
+    st.session_state["visited"] = True
+    st.session_state["visit_count"] = _increment_visit()
+else:
+    st.session_state["visit_count"] = _get_visit_count()
+
+# ─────────────────────────────────────────
 # 모바일 하단 탭바 (components.html로 parent DOM 조작)
 # ─────────────────────────────────────────
 import streamlit.components.v1 as components
@@ -797,9 +827,11 @@ show_welcome()
 if "TOP 5" in page:
     latest = core.get_latest_drw_no()
 
+    visit_count = st.session_state.get("visit_count", _VISIT_BASE)
     st.markdown(f"""
     <div class="page-title">🏆 이번 주 최고의 번호 TOP 5</div>
     <div class="page-sub">AI가 {latest}회차까지의 데이터로 {latest+1 if latest else "?"}회차를 분석합니다 &nbsp;·&nbsp; 50,000개 조합 스코어링</div>
+    <div style="margin:8px 0 4px;font-size:12px;color:#f9ca24;opacity:0.85;">👁 누적 방문자 &nbsp;<b>{visit_count:,}</b>명</div>
     """, unsafe_allow_html=True)
 
     if latest == 0:
