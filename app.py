@@ -486,34 +486,54 @@ div[data-testid="stSlider"] [role="slider"] {
 core.init_db()
 
 # ─────────────────────────────────────────
-# 방문자 카운터
+# 방문자 카운터 (누적 + 오늘)
 # ─────────────────────────────────────────
 import json as _json
+from datetime import date as _date
 
 _VISIT_FILE = "/tmp/lotto_visits.json"
-_VISIT_BASE = 1000  # 카운터 미설치 이전 방문자 기준값
+_VISIT_BASE = 1000  # 카운터 미설치 이전 누적 기준값
 
-def _get_visit_count() -> int:
+def _load_visits() -> dict:
     try:
         with open(_VISIT_FILE) as f:
-            return _json.load(f).get("count", _VISIT_BASE)
+            return _json.load(f)
     except Exception:
-        return _VISIT_BASE
+        return {}
 
-def _increment_visit() -> int:
-    count = _get_visit_count() + 1
+def _save_visits(data: dict):
     try:
         with open(_VISIT_FILE, "w") as f:
-            _json.dump({"count": count}, f)
+            _json.dump(data, f)
     except Exception:
         pass
-    return count
+
+def _increment_visit() -> dict:
+    today = str(_date.today())
+    data = _load_visits()
+    data["total"] = data.get("total", _VISIT_BASE) + 1
+    if data.get("today_date") != today:
+        data["today_date"] = today
+        data["today"] = 1
+    else:
+        data["today"] = data.get("today", 0) + 1
+    _save_visits(data)
+    return data
+
+def _get_visits() -> dict:
+    today = str(_date.today())
+    data = _load_visits()
+    if data.get("today_date") != today:
+        data["today"] = 0
+    return data
 
 if "visited" not in st.session_state:
     st.session_state["visited"] = True
-    st.session_state["visit_count"] = _increment_visit()
+    _vdata = _increment_visit()
 else:
-    st.session_state["visit_count"] = _get_visit_count()
+    _vdata = _get_visits()
+st.session_state["visit_total"] = _vdata.get("total", _VISIT_BASE)
+st.session_state["visit_today"] = _vdata.get("today", 0)
 
 # ─────────────────────────────────────────
 # 모바일 하단 탭바 (components.html로 parent DOM 조작)
@@ -827,11 +847,16 @@ show_welcome()
 if "TOP 5" in page:
     latest = core.get_latest_drw_no()
 
-    visit_count = st.session_state.get("visit_count", _VISIT_BASE)
+    v_total = st.session_state.get("visit_total", _VISIT_BASE)
+    v_today = st.session_state.get("visit_today", 0)
     st.markdown(f"""
     <div class="page-title">🏆 이번 주 최고의 번호 TOP 5</div>
     <div class="page-sub">AI가 {latest}회차까지의 데이터로 {latest+1 if latest else "?"}회차를 분석합니다 &nbsp;·&nbsp; 50,000개 조합 스코어링</div>
-    <div style="margin:8px 0 4px;font-size:12px;color:#f9ca24;opacity:0.85;">👁 누적 방문자 &nbsp;<b>{visit_count:,}</b>명</div>
+    <div style="display:flex;gap:16px;margin:10px 0 4px;font-size:12px;">
+      <span style="color:#f9ca24;">👁 오늘 방문자 &nbsp;<b>{v_today:,}명</b></span>
+      <span style="color:#8a9ab0;">·</span>
+      <span style="color:#a0aec0;">📊 누적 방문자 &nbsp;<b>{v_total:,}명</b></span>
+    </div>
     """, unsafe_allow_html=True)
 
     if latest == 0:
