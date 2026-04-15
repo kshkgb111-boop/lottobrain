@@ -874,10 +874,38 @@ if "TOP 5" in page:
 
     weights = st.session_state.get("custom_weights", core.DEFAULT_WEIGHTS.copy())
 
+    # 회차별 캐시 파일 (같은 회차는 항상 동일한 결과)
+    _cache_file = f"/tmp/top5_{latest}.json"
+
+    def _load_cached_results():
+        try:
+            with open(_cache_file) as f:
+                return _json.load(f)
+        except Exception:
+            return []
+
+    def _save_cached_results(res):
+        try:
+            with open(_cache_file, "w") as f:
+                _json.dump(res, f)
+        except Exception:
+            pass
+
+    # 세션에 없으면 캐시에서 복원
+    if "weekly_results" not in st.session_state:
+        cached = _load_cached_results()
+        if cached:
+            st.session_state["weekly_results"] = cached
+
     if st.button("✨  AI 번호 분석 시작", type="primary", use_container_width=True):
-        with st.spinner("🧠 50,000개 조합 분석 중..."):
-            results = core.gen_best_weekly(5, weights)
-        st.session_state["weekly_results"] = results
+        cached = _load_cached_results()
+        if cached:
+            st.session_state["weekly_results"] = cached
+        else:
+            with st.spinner("🧠 50,000개 조합 분석 중..."):
+                results = core.gen_best_weekly(5, weights)
+            _save_cached_results(results)
+            st.session_state["weekly_results"] = results
 
     results = st.session_state.get("weekly_results", [])
 
