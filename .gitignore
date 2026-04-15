@@ -1,5 +1,5 @@
-# 데이터베이스 (용량 크고 개인 수집 데이터)
-lotto.db
+# 데이터베이스는 Streamlit Cloud 배포를 위해 포함
+# lotto.db
 
 # 빌드 결과물
 build/
