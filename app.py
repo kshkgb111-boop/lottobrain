@@ -57,7 +57,7 @@ button[data-testid="stExpandSidebarButton"] { display: none !important; }
 
     /* 메인 콘텐츠 전체 너비 + 하단 탭바 여백 */
     .main .block-container {
-        padding: 12px 14px 80px !important;
+        padding: 12px 14px calc(80px + env(safe-area-inset-bottom)) !important;
         max-width: 100% !important;
     }
 
@@ -504,10 +504,12 @@ components.html("""
   style.textContent = [
     '#lbMobileNav{',
       'display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;',
-      'height:62px;background:rgba(10,13,22,0.97);',
+      'height:calc(62px + env(safe-area-inset-bottom));',
+      'background:rgba(10,13,22,0.97);',
       'border-top:1px solid rgba(249,202,36,0.18);',
       'backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);',
-      'align-items:center;justify-content:space-around;padding:0 4px;',
+      'align-items:center;justify-content:space-around;',
+      'padding:0 4px;padding-bottom:env(safe-area-inset-bottom);',
     '}',
     '@media(max-width:768px){#lbMobileNav{display:flex;}}',
     '.mnav-btn{',
