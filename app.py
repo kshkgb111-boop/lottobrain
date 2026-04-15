@@ -4,15 +4,24 @@
 """
 
 import os
+import sys
 import time
-import streamlit as st
-import plotly.express as px
-import plotly.graph_objects as go
-import pandas as pd
-from collections import Counter
+import traceback
 
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
-import lotto_core as core
+try:
+    import streamlit as st
+    import plotly.express as px
+    import plotly.graph_objects as go
+    import pandas as pd
+    from collections import Counter
+
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+    import lotto_core as core
+
+except Exception as _e:
+    print(f"[STARTUP ERROR] {_e}", file=sys.stderr)
+    traceback.print_exc()
+    raise
 
 WELCOME_FLAG = ".welcome_shown"
 
