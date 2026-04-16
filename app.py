@@ -1278,16 +1278,18 @@ elif "사주" in page:
 
         # ── 사주 8자 표시 ──
         st.markdown("<br>", unsafe_allow_html=True)
-        pillar_html = ""
+        pillar_parts = []
         for p in result["pillars"]:
             s_color = saju.ELEMENT_COLORS[saju.STEM_ELEMENT[p["stem"]]]
             b_color = saju.ELEMENT_COLORS[saju.BRANCH_ELEMENT[p["branch"]]]
-            pillar_html += f"""
-            <div style="text-align:center;flex:1;min-width:60px">
-                <div style="font-size:10px;color:#4a5a6a;margin-bottom:4px">{p['name']}</div>
-                <div style="font-size:22px;font-weight:900;color:{s_color};line-height:1.2">{p['stem']}</div>
-                <div style="font-size:22px;font-weight:900;color:{b_color};line-height:1.2">{p['branch']}</div>
-            </div>"""
+            pillar_parts.append(
+                f'<div style="text-align:center;flex:1;min-width:60px">'
+                f'<div style="font-size:10px;color:#4a5a6a;margin-bottom:4px">{p["name"]}</div>'
+                f'<div style="font-size:22px;font-weight:900;color:{s_color};line-height:1.2">{p["stem"]}</div>'
+                f'<div style="font-size:22px;font-weight:900;color:{b_color};line-height:1.2">{p["branch"]}</div>'
+                f'</div>'
+            )
+        pillar_html = "".join(pillar_parts)
 
         st.markdown(f"""
         <div style="background:rgba(13,17,35,0.9);border-radius:16px;
@@ -1303,7 +1305,7 @@ elif "사주" in page:
 
         # ── 오행 분포 ──
         total_chars = sum(elements.values())
-        bar_html = ""
+        bar_parts = []
         for el, cnt in sorted(elements.items(), key=lambda x: -x[1]):
             pct = cnt / total_chars * 100
             color = saju.ELEMENT_COLORS[el]
@@ -1314,19 +1316,18 @@ elif "사주" in page:
                 tag = '<span style="font-size:10px;background:rgba(168,85,247,0.2);color:#a855f7;border-radius:4px;padding:1px 6px;margin-left:6px">용신</span>'
             elif el == gishin:
                 tag = '<span style="font-size:10px;background:rgba(249,202,36,0.15);color:#f9ca24;border-radius:4px;padding:1px 6px;margin-left:6px">기신</span>'
-            bar_html += f"""
-            <div style="margin:8px 0">
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-                    <span style="font-size:14px">{emoji}</span>
-                    <span style="font-size:13px;font-weight:700;color:{color}">{el}({cnt})</span>
-                    <span style="font-size:11px;color:#4a5a6a">{desc}</span>
-                    {tag}
-                </div>
-                <div style="background:rgba(255,255,255,0.06);border-radius:99px;height:6px;overflow:hidden">
-                    <div style="width:{pct:.0f}%;height:100%;background:{color};border-radius:99px;
-                                box-shadow:0 0 6px {color}88"></div>
-                </div>
-            </div>"""
+            bar_parts.append(
+                f'<div style="margin:8px 0">'
+                f'<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'
+                f'<span style="font-size:14px">{emoji}</span>'
+                f'<span style="font-size:13px;font-weight:700;color:{color}">{el}({cnt})</span>'
+                f'<span style="font-size:11px;color:#4a5a6a">{desc}</span>'
+                f'{tag}</div>'
+                f'<div style="background:rgba(255,255,255,0.06);border-radius:99px;height:6px;overflow:hidden">'
+                f'<div style="width:{pct:.0f}%;height:100%;background:{color};border-radius:99px;box-shadow:0 0 6px {color}88"></div>'
+                f'</div></div>'
+            )
+        bar_html = "".join(bar_parts)
 
         yong_color = saju.ELEMENT_COLORS[yongshin]
         yong_emoji = saju.ELEMENT_EMOJI[yongshin]
@@ -1369,16 +1370,14 @@ elif "사주" in page:
                         el_tags += f'<span style="display:inline-block;font-size:10px;background:rgba(255,255,255,0.04);color:{saju.ELEMENT_COLORS[el]};border-radius:4px;padding:1px 5px;margin:2px">{saju.ELEMENT_EMOJI[el]}{n}</span>'
                         break
 
-            st.markdown(f"""
-            <div class="num-card" style="border-color:rgba(168,85,247,0.25);">
-                <div class="rank-badge" style="color:#a855f7;background:rgba(168,85,247,0.1);
-                     border-color:rgba(168,85,247,0.25)">
-                    🔮 #{i+1} · 사주 맞춤
-                </div>
-                <div style="margin:10px 0 8px">{balls_html}</div>
-                <div style="margin-top:6px">{el_tags}</div>
-            </div>
-            """, unsafe_allow_html=True)
+            card_html = (
+                f'<div class="num-card" style="border-color:rgba(168,85,247,0.25);">'
+                f'<div class="rank-badge" style="color:#a855f7;background:rgba(168,85,247,0.1);border-color:rgba(168,85,247,0.25)">🔮 #{i+1} · 사주 맞춤</div>'
+                f'<div style="margin:10px 0 8px">{balls_html}</div>'
+                f'<div style="margin-top:6px">{el_tags}</div>'
+                f'</div>'
+            )
+            st.markdown(card_html, unsafe_allow_html=True)
 
         st.markdown("<br>", unsafe_allow_html=True)
         if st.button("📋  히스토리에 저장", use_container_width=True):
