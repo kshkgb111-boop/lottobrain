@@ -489,7 +489,11 @@ core.init_db()
 # 방문자 카운터 (누적 + 오늘)
 # ─────────────────────────────────────────
 import json as _json
-from datetime import date as _date
+from datetime import datetime as _datetime
+import zoneinfo as _zi
+
+def _today_kst() -> str:
+    return _datetime.now(_zi.ZoneInfo("Asia/Seoul")).strftime("%Y-%m-%d")
 
 _VISIT_FILE = "/tmp/lotto_visits.json"
 _VISIT_BASE = 1000  # 카운터 미설치 이전 누적 기준값
@@ -509,7 +513,7 @@ def _save_visits(data: dict):
         pass
 
 def _increment_visit() -> dict:
-    today = str(_date.today())
+    today = _today_kst()
     data = _load_visits()
     data["total"] = data.get("total", _VISIT_BASE) + 1
     if data.get("today_date") != today:
@@ -521,7 +525,7 @@ def _increment_visit() -> dict:
     return data
 
 def _get_visits() -> dict:
-    today = str(_date.today())
+    today = _today_kst()
     data = _load_visits()
     if data.get("today_date") != today:
         data["today"] = 0
