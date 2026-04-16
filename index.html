@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>로또브레인 — AI 로또 번호 추천</title>
+  <meta name="description" content="로또브레인은 AI가 1200회 이상의 역대 당첨 데이터를 분석해 이번 주 최적의 로또 번호를 추천해드리는 서비스입니다.">
+  <meta name="keywords" content="로또브레인, 로또 번호 추천, AI 로또, 로또 분석, 로또 번호 생성, 로또 통계">
+  <meta property="og:title" content="로또브레인 — AI 로또 번호 추천">
+  <meta property="og:description" content="AI가 1200회 이상의 당첨 데이터를 분석해 이번 주 최적의 로또 번호를 추천합니다.">
+  <meta property="og:url" content="https://lottobrain.streamlit.app">
+  <meta property="og:type" content="website">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, 'Noto Sans KR', sans-serif;
+      background: #0a0d16;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .logo { font-size: 48px; margin-bottom: 12px; }
+    h1 { font-size: 2rem; color: #f9ca24; margin-bottom: 8px; }
+    .sub { font-size: 1rem; color: #8a9ab0; margin-bottom: 40px; text-align: center; line-height: 1.6; }
+    .features {
+      display: flex; flex-wrap: wrap; gap: 16px;
+      justify-content: center; margin-bottom: 40px; max-width: 600px;
+    }
+    .feature {
+      background: #1e2130; border-radius: 12px;
+      padding: 16px 20px; font-size: 0.9rem;
+      border: 1px solid rgba(249,202,36,0.15);
+      text-align: center; flex: 1; min-width: 140px;
+    }
+    .feature .icon { font-size: 1.6rem; margin-bottom: 6px; }
+    .btn {
+      display: inline-block;
+      background: #f9ca24; color: #0a0d16;
+      font-size: 1.1rem; font-weight: 700;
+      padding: 16px 48px; border-radius: 12px;
+      text-decoration: none;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 24px rgba(249,202,36,0.3);
+    }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(249,202,36,0.4); }
+    .note { margin-top: 16px; font-size: 0.8rem; color: #4a5568; }
+  </style>
+</head>
+<body>
+  <div class="logo">🧠</div>
+  <h1>로또브레인</h1>
+  <p class="sub">
+    AI가 역대 1,200회 이상의 당첨 데이터를 분석해<br>
+    이번 주 최적의 로또 번호를 추천해드립니다
+  </p>
+
+  <div class="features">
+    <div class="feature">
+      <div class="icon">🏆</div>
+      <div>이번 주 TOP 5<br>번호 추천</div>
+    </div>
+    <div class="feature">
+      <div class="icon">📊</div>
+      <div>역대 당첨<br>통계 분석</div>
+    </div>
+    <div class="feature">
+      <div class="icon">🎰</div>
+      <div>전략별<br>번호 생성</div>
+    </div>
+    <div class="feature">
+      <div class="icon">📱</div>
+      <div>PC·모바일<br>모두 지원</div>
+    </div>
+  </div>
+
+  <a class="btn" href="https://lottobrain.streamlit.app" target="_blank">
+    ✨ 무료로 시작하기
+  </a>
+  <p class="note">별도 설치 없이 브라우저에서 바로 사용</p>
+</body>
+</html>
