@@ -172,6 +172,13 @@ div[data-testid="stRadio"] > div > label:nth-child(3) p::after {
     margin-left: 6px; vertical-align: middle;
 }
 div[data-testid="stRadio"] > div > label:nth-child(5) p::after {
+    content: "NEW";
+    background: #a855f7; color: #fff;
+    border-radius: 5px; padding: 1px 6px;
+    font-size: 10px; font-weight: 700;
+    margin-left: 6px; vertical-align: middle;
+}
+div[data-testid="stRadio"] > div > label:nth-child(6) p::after {
     content: "PRO";
     background: linear-gradient(90deg, #f9ca24, #f0932b); color: #1a1a2e;
     border-radius: 5px; padding: 1px 6px;
@@ -568,8 +575,8 @@ components.html("""
     '@media(max-width:768px){#lbMobileNav{display:flex;}}',
     '.mnav-btn{',
       'display:flex;flex-direction:column;align-items:center;gap:2px;',
-      'padding:6px 8px;flex:1;cursor:pointer;border:none;background:none;',
-      'border-radius:10px;color:#4a5a6a;font-size:10px;font-weight:600;',
+      'padding:4px 4px;flex:1;cursor:pointer;border:none;background:none;',
+      'border-radius:10px;color:#4a5a6a;font-size:9px;font-weight:600;',
       'font-family:"Noto Sans KR",sans-serif;-webkit-tap-highlight-color:transparent;',
       'transition:color 0.2s;',
     '}',
@@ -587,7 +594,8 @@ components.html("""
     '<button class="mnav-btn" onclick="lbNav(1)"><span class="mi">🎰</span>번호생성</button>' +
     '<button class="mnav-btn" onclick="lbNav(2)"><span class="mi">📊</span>통계</button>' +
     '<button class="mnav-btn" onclick="lbNav(3)"><span class="mi">📋</span>히스토리</button>' +
-    '<button class="mnav-btn" onclick="lbNav(4)"><span class="mi">⚙️</span>설정</button>';
+    '<button class="mnav-btn" onclick="lbNav(4)"><span class="mi">🔮</span>사주</button>' +
+    '<button class="mnav-btn" onclick="lbNav(5)"><span class="mi">⚙️</span>설정</button>';
   p.body.appendChild(nav);
 
   // ── 네비게이션 클릭 ──
@@ -823,7 +831,7 @@ with st.sidebar:
     # 네비게이션
     page = st.radio(
         "메뉴",
-        ["🏆  이번 주 TOP 5", "🎰  번호 생성", "📊  통계 분석", "📋  예측 히스토리", "⚙️  가중치 설정"],
+        ["🏆  이번 주 TOP 5", "🎰  번호 생성", "📊  통계 분석", "📋  예측 히스토리", "🔮  사주 번호", "⚙️  가중치 설정"],
         label_visibility="collapsed",
     )
 
@@ -1222,7 +1230,182 @@ elif "히스토리" in page:
 
 
 # ─────────────────────────────────────────
-# 5. 가중치 설정
+# 5. 사주 번호
+# ─────────────────────────────────────────
+elif "사주" in page:
+    import saju_core as saju
+
+    st.markdown("""
+    <div class="page-title">🔮 사주 번호 추천</div>
+    <div class="page-sub">생년월일시를 입력하면 사주 오행을 분석해 맞춤 번호를 추천해드립니다</div>
+    """, unsafe_allow_html=True)
+
+    # ── 입력 폼 ──
+    with st.form("saju_form"):
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            birth_year = st.number_input("태어난 연도", min_value=1930, max_value=2010, value=1990, step=1)
+        with c2:
+            birth_month = st.number_input("월", min_value=1, max_value=12, value=1, step=1)
+        with c3:
+            birth_day = st.number_input("일", min_value=1, max_value=31, value=1, step=1)
+
+        HOUR_OPTIONS = {
+            "모름 (자시 기준)": 23,
+            "자시 (23~01시)": 23, "축시 (01~03시)": 1,
+            "인시 (03~05시)": 3, "묘시 (05~07시)": 5,
+            "진시 (07~09시)": 7, "사시 (09~11시)": 9,
+            "오시 (11~13시)": 11, "미시 (13~15시)": 13,
+            "신시 (15~17시)": 15, "유시 (17~19시)": 17,
+            "술시 (19~21시)": 19, "해시 (21~23시)": 21,
+        }
+        birth_hour_label = st.selectbox("태어난 시간 (모르면 '모름' 선택)", list(HOUR_OPTIONS.keys()))
+        birth_hour = HOUR_OPTIONS[birth_hour_label]
+
+        count_saju = st.number_input("추천 게임 수", min_value=1, max_value=10, value=5, step=1)
+        submitted = st.form_submit_button("🔮  사주 분석 시작", type="primary", use_container_width=True)
+
+    if submitted:
+        try:
+            result = saju.calc_saju(birth_year, birth_month, birth_day, birth_hour)
+        except Exception as e:
+            st.error(f"날짜를 확인해주세요: {e}")
+            st.stop()
+
+        elements = result["elements"]
+        yongshin = result["yongshin"]
+        gishin   = result["gishin"]
+
+        # ── 사주 8자 표시 ──
+        st.markdown("<br>", unsafe_allow_html=True)
+        pillar_html = ""
+        for p in result["pillars"]:
+            s_color = saju.ELEMENT_COLORS[saju.STEM_ELEMENT[p["stem"]]]
+            b_color = saju.ELEMENT_COLORS[saju.BRANCH_ELEMENT[p["branch"]]]
+            pillar_html += f"""
+            <div style="text-align:center;flex:1;min-width:60px">
+                <div style="font-size:10px;color:#4a5a6a;margin-bottom:4px">{p['name']}</div>
+                <div style="font-size:22px;font-weight:900;color:{s_color};line-height:1.2">{p['stem']}</div>
+                <div style="font-size:22px;font-weight:900;color:{b_color};line-height:1.2">{p['branch']}</div>
+            </div>"""
+
+        st.markdown(f"""
+        <div style="background:rgba(13,17,35,0.9);border-radius:16px;
+                    border:1px solid rgba(168,85,247,0.25);padding:20px 16px;margin-bottom:16px">
+            <div style="font-size:12px;color:#a855f7;font-weight:700;margin-bottom:14px;letter-spacing:1px">
+                사주 팔자 (四柱八字)
+            </div>
+            <div style="display:flex;gap:8px;justify-content:center">
+                {pillar_html}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # ── 오행 분포 ──
+        total_chars = sum(elements.values())
+        bar_html = ""
+        for el, cnt in sorted(elements.items(), key=lambda x: -x[1]):
+            pct = cnt / total_chars * 100
+            color = saju.ELEMENT_COLORS[el]
+            emoji = saju.ELEMENT_EMOJI[el]
+            desc  = saju.ELEMENT_DESC[el]
+            tag = ""
+            if el == yongshin:
+                tag = '<span style="font-size:10px;background:rgba(168,85,247,0.2);color:#a855f7;border-radius:4px;padding:1px 6px;margin-left:6px">용신</span>'
+            elif el == gishin:
+                tag = '<span style="font-size:10px;background:rgba(249,202,36,0.15);color:#f9ca24;border-radius:4px;padding:1px 6px;margin-left:6px">기신</span>'
+            bar_html += f"""
+            <div style="margin:8px 0">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+                    <span style="font-size:14px">{emoji}</span>
+                    <span style="font-size:13px;font-weight:700;color:{color}">{el}({cnt})</span>
+                    <span style="font-size:11px;color:#4a5a6a">{desc}</span>
+                    {tag}
+                </div>
+                <div style="background:rgba(255,255,255,0.06);border-radius:99px;height:6px;overflow:hidden">
+                    <div style="width:{pct:.0f}%;height:100%;background:{color};border-radius:99px;
+                                box-shadow:0 0 6px {color}88"></div>
+                </div>
+            </div>"""
+
+        yong_color = saju.ELEMENT_COLORS[yongshin]
+        yong_emoji = saju.ELEMENT_EMOJI[yongshin]
+        st.markdown(f"""
+        <div style="background:rgba(13,17,35,0.9);border-radius:16px;
+                    border:1px solid rgba(168,85,247,0.2);padding:20px 16px;margin-bottom:16px">
+            <div style="font-size:12px;color:#a855f7;font-weight:700;margin-bottom:14px;letter-spacing:1px">
+                오행 분포 분석
+            </div>
+            {bar_html}
+            <div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.05);
+                        font-size:13px;color:#94a3b8;line-height:1.7">
+                {yong_emoji} <b style="color:{yong_color}">용신 '{yongshin}'</b>
+                — 당신에게 가장 필요한 기운입니다.<br>
+                이 기운의 번호를 중심으로 행운의 번호를 추천해드립니다.
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # ── 번호 생성 ──
+        freq = core.get_frequency() if core.get_latest_drw_no() else None
+
+        st.markdown(f"""
+        <div style="font-size:14px;font-weight:700;color:#c4ccd8;margin:20px 0 12px">
+            {yong_emoji} 사주 맞춤 번호 추천
+        </div>
+        """, unsafe_allow_html=True)
+
+        for i in range(int(count_saju)):
+            nums = saju.gen_saju_numbers(result, freq)
+            balls_html = "".join(
+                f'<span class="ball {ball_color_class(n)}">{n}</span>'
+                for n in nums
+            )
+            el_tags = ""
+            for n in nums:
+                # 이 번호가 어느 오행인지 찾기
+                for el, pool in saju.ELEMENT_NUMBERS.items():
+                    if n in pool:
+                        el_tags += f'<span style="display:inline-block;font-size:10px;background:rgba(255,255,255,0.04);color:{saju.ELEMENT_COLORS[el]};border-radius:4px;padding:1px 5px;margin:2px">{saju.ELEMENT_EMOJI[el]}{n}</span>'
+                        break
+
+            st.markdown(f"""
+            <div class="num-card" style="border-color:rgba(168,85,247,0.25);">
+                <div class="rank-badge" style="color:#a855f7;background:rgba(168,85,247,0.1);
+                     border-color:rgba(168,85,247,0.25)">
+                    🔮 #{i+1} · 사주 맞춤
+                </div>
+                <div style="margin:10px 0 8px">{balls_html}</div>
+                <div style="margin-top:6px">{el_tags}</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("📋  히스토리에 저장", use_container_width=True):
+            latest = core.get_latest_drw_no()
+            for i in range(int(count_saju)):
+                nums = saju.gen_saju_numbers(result, freq)
+                core.save_prediction(nums, latest + 1, "saju")
+            st.success(f"✅ {count_saju}게임 저장 완료!")
+
+    else:
+        st.markdown("""
+        <div style="background:rgba(13,17,35,0.9);border-radius:20px;padding:40px 32px;
+                    text-align:center;border:1px solid rgba(168,85,247,0.2);margin-top:8px">
+            <div style="font-size:48px;margin-bottom:16px">🔮</div>
+            <div style="font-size:16px;font-weight:700;color:#e2e8f0;margin-bottom:8px">
+                생년월일시를 입력하고 분석을 시작하세요
+            </div>
+            <div style="font-size:13px;color:#4a5a6a;line-height:1.7">
+                사주 오행(목·화·토·금·수) 분포를 분석해<br>
+                당신에게 맞는 행운의 번호를 추천해드립니다
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+
+# ─────────────────────────────────────────
+# 6. 가중치 설정
 # ─────────────────────────────────────────
 elif "가중치" in page:
     st.markdown("""
