@@ -856,10 +856,17 @@ if "TOP 5" in page:
     st.markdown(f"""
     <div class="page-title">🏆 이번 주 최고의 번호 TOP 5</div>
     <div class="page-sub">AI가 {latest}회차까지의 데이터로 {latest+1 if latest else "?"}회차를 분석합니다 &nbsp;·&nbsp; 50,000개 조합 스코어링</div>
-    <div style="display:flex;gap:16px;margin:10px 0 4px;font-size:12px;">
+    <div style="display:flex;align-items:center;gap:16px;margin:10px 0 4px;font-size:12px;flex-wrap:wrap;">
       <span style="color:#f9ca24;">👁 오늘 방문자 &nbsp;<b>{v_today:,}명</b></span>
       <span style="color:#8a9ab0;">·</span>
       <span style="color:#a0aec0;">📊 누적 방문자 &nbsp;<b>{v_total:,}명</b></span>
+      <span style="color:#8a9ab0;">·</span>
+      <a href="https://open.kakao.com/o/px13lLqi" target="_blank"
+         style="display:inline-flex;align-items:center;gap:5px;background:#FEE500;color:#3C1E1E;
+                font-weight:700;font-size:11px;padding:4px 10px;border-radius:20px;
+                text-decoration:none;line-height:1;">
+        💬 카카오 오픈채팅
+      </a>
     </div>
     """, unsafe_allow_html=True)
 
