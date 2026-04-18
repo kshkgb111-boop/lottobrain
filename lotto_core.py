@@ -389,15 +389,126 @@ def gen_best_weekly(top_n=5, weights=None, sample_size=50000) -> list[tuple]:
 # ─────────────────────────────────────────
 # 예측 히스토리
 # ─────────────────────────────────────────
-def save_prediction(nums: list[int], target_drw: int, strategy: str):
+def save_prediction(nums: list[int], target_drw: int, strategy: str, saved_at: str | None = None):
     conn = sqlite3.connect(DB_PATH)
     conn.execute(
         "INSERT INTO predictions (saved_at,target_drw,no1,no2,no3,no4,no5,no6,strategy) VALUES (?,?,?,?,?,?,?,?,?)",
-        (datetime.now().strftime("%Y-%m-%d %H:%M"), target_drw,
+        (saved_at or datetime.now().strftime("%Y-%m-%d %H:%M"), target_drw,
          nums[0], nums[1], nums[2], nums[3], nums[4], nums[5], strategy),
     )
     conn.commit()
     conn.close()
+
+
+# ─────────────────────────────────────────
+# 역대 TOP 5 기록 백필 (2026년~)
+# ─────────────────────────────────────────
+def gen_best_weekly_for_draw(target_drw: int, top_n: int = 5,
+                              weights: dict | None = None,
+                              sample_size: int = 10000,
+                              seed: int | None = None) -> list[dict]:
+    """
+    target_drw 회차 직전까지의 데이터만 사용해 TOP n 조합을 반환.
+    과거 시점에서 AI가 추천했을 번호를 재현한다.
+    """
+    w = weights or DEFAULT_WEIGHTS.copy()
+    conn = sqlite3.connect(DB_PATH)
+    rows = conn.execute(
+        "SELECT drw_no,no1,no2,no3,no4,no5,no6 FROM draws WHERE drw_no < ? ORDER BY drw_no",
+        (target_drw,)
+    ).fetchall()
+    conn.close()
+    if not rows:
+        return []
+
+    all_draws = [list(r[1:7]) for r in rows]
+    freq = Counter()
+    for nums in all_draws:
+        freq.update(nums)
+
+    # last_appearance: 최신 회차부터 역순으로 처음 등장한 갭
+    last_app: dict[int, int] = {}
+    for i, nums in enumerate(reversed(all_draws)):
+        for n in nums:
+            if n not in last_app:
+                last_app[n] = i
+
+    numbers = list(range(1, 46))
+    pool_w = []
+    for n in numbers:
+        wt = freq.get(n, 1) * 1.0
+        gap = last_app.get(n, 0)
+        wt *= 1.5 if 5 <= gap <= 15 else (1.2 if gap > 15 else 1.0)
+        if n > 31:
+            wt *= 1.1
+        pool_w.append(wt)
+
+    rng = random.Random(seed if seed is not None else target_drw)
+
+    seen: set[tuple] = set()
+    scored = []
+    attempts = 0
+    while len(scored) < sample_size and attempts < sample_size * 3:
+        attempts += 1
+        chosen: set[int] = set()
+        while len(chosen) < 6:
+            chosen.add(rng.choices(numbers, weights=pool_w, k=1)[0])
+        key = tuple(sorted(chosen))
+        if key in seen:
+            continue
+        seen.add(key)
+        scored.append((list(key), score_combination(list(key), freq, last_app, all_draws, w)))
+
+    scored.sort(key=lambda x: x[1], reverse=True)
+    result = []
+    for nums, s in scored[:top_n]:
+        odd = sum(1 for n in nums if n % 2 == 1)
+        low = sum(1 for n in nums if n <= 22)
+        result.append({
+            "nums": nums, "score": s,
+            "sum": sum(nums), "odd": odd, "even": 6 - odd,
+            "low": low, "high": 6 - low,
+            "avg_gap": sum(last_app.get(n, 0) for n in nums) / 6,
+        })
+    return result
+
+
+def backfill_weekly_top5(since_date: str = "2026-01-01",
+                         strategy_tag: str = "weekly_top5",
+                         progress_cb=None) -> int:
+    """
+    since_date 이후 추첨 회차 각각에 대해 TOP 5 예측을 백필한다.
+    이미 같은 (target_drw, strategy_tag) 조합이 있으면 건너뜀.
+    반환: 새로 저장된 예측 건수.
+    """
+    conn = sqlite3.connect(DB_PATH)
+    draws = conn.execute(
+        "SELECT drw_no, date FROM draws WHERE date >= ? ORDER BY drw_no",
+        (since_date,)
+    ).fetchall()
+
+    existing = set()
+    for row in conn.execute(
+        "SELECT DISTINCT target_drw FROM predictions WHERE strategy=?",
+        (strategy_tag,)
+    ).fetchall():
+        existing.add(row[0])
+    conn.close()
+
+    to_process = [(d, dt) for d, dt in draws if d not in existing]
+    total = len(to_process)
+    saved = 0
+
+    for i, (drw_no, draw_date) in enumerate(to_process, 1):
+        top5 = gen_best_weekly_for_draw(drw_no, top_n=5, sample_size=5000, seed=drw_no)
+        saved_at = f"{draw_date} 00:00"
+        for r in top5:
+            save_prediction(r["nums"], drw_no, strategy_tag, saved_at=saved_at)
+            saved += 1
+        if progress_cb:
+            progress_cb(i, total)
+
+    return saved
 
 
 def check_and_update_results() -> int:
@@ -434,7 +545,7 @@ def load_predictions() -> list[dict]:
                d.no1,d.no2,d.no3,d.no4,d.no5,d.no6,d.bonus
         FROM predictions p
         LEFT JOIN draws d ON p.target_drw = d.drw_no
-        ORDER BY p.id DESC LIMIT 50
+        ORDER BY p.target_drw DESC, p.id ASC LIMIT 500
     """).fetchall()
     conn.close()
     result = []

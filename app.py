@@ -1153,6 +1153,39 @@ elif "히스토리" in page:
     if updated:
         st.info(f"🔄 {updated}건의 결과가 업데이트되었습니다.")
 
+    # ── 2026년~ 역대 TOP 5 기록 백필 ──
+    with st.container():
+        c1, c2 = st.columns([3, 1])
+        with c1:
+            st.markdown("""
+            <div style="background:rgba(249,202,36,0.06);border:1px solid rgba(249,202,36,0.2);
+                        border-radius:12px;padding:12px 14px;font-size:12px;color:#d4dce8;line-height:1.6">
+                🗓️ <b>2026년 이후 매주 TOP 5 자동 기록</b><br>
+                <span style="color:#8a9ab0">각 회차 직전 데이터로 AI가 예측한 번호 & 실제 당첨번호 비교</span>
+            </div>
+            """, unsafe_allow_html=True)
+        with c2:
+            backfill_clicked = st.button("📥  기록 생성", use_container_width=True, key="backfill_2026")
+
+    if backfill_clicked:
+        ph = st.empty()
+        bar = st.progress(0)
+        try:
+            ph.info("🧠 각 회차 시점에서 AI 분석 중...")
+            def _cb(cur, total):
+                bar.progress(min(cur / total, 1.0))
+            saved = core.backfill_weekly_top5(since_date="2026-01-01", progress_cb=_cb)
+            core.check_and_update_results()
+            bar.empty(); ph.empty()
+            if saved:
+                st.success(f"✅ {saved}건의 예측을 히스토리에 추가했습니다.")
+            else:
+                st.info("이미 모든 회차가 기록되어 있습니다.")
+            st.rerun()
+        except Exception as e:
+            bar.empty(); ph.empty()
+            st.warning(f"❌ 백필 실패: {e}")
+
     predictions = core.load_predictions()
     if not predictions:
         st.markdown("""
